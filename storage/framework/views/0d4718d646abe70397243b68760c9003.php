@@ -1,0 +1,22 @@
+<?php $__env->startSection('page-title', __('NPS Campaigns')); ?>
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Dashboard')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('NPS Campaigns')); ?></li>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('page-subtitle'); ?>
+    <?php echo e(__('Monitor customer sentiment and feedback loops from a dedicated commercial feedback workspace.')); ?>
+
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('action-btn'); ?>
+    <div class="float-end"><?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create nps campaign')): ?><a href="<?php echo e(route('nps-campaigns.create')); ?>" class="btn btn-sm btn-primary"><i class="ti ti-plus"></i></a><?php endif; ?></div>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('content'); ?>
+    <div class="ux-kpi-grid mb-4">
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('Campaigns')); ?></span><strong class="ux-kpi-value"><?php echo e($campaigns->count()); ?></strong><span class="ux-kpi-meta"><?php echo e(__('feedback programs')); ?></span></div>
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('Responses')); ?></span><strong class="ux-kpi-value"><?php echo e($campaigns->sum('responses_count')); ?></strong><span class="ux-kpi-meta"><?php echo e(__('voice of customer inputs')); ?></span></div>
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('Active')); ?></span><strong class="ux-kpi-value"><?php echo e($campaigns->where('status', 'active')->count()); ?></strong><span class="ux-kpi-meta"><?php echo e(__('currently collecting answers')); ?></span></div>
+    </div>
+    <div class="card ux-list-card"><div class="card-body table-border-style"><div class="table-responsive"><table class="table datatable"><thead><tr><th><?php echo e(__('Campaign')); ?></th><th><?php echo e(__('Channel')); ?></th><th><?php echo e(__('Status')); ?></th><th><?php echo e(__('Responses')); ?></th><th><?php echo e(__('Action')); ?></th></tr></thead><tbody><?php $__currentLoopData = $campaigns; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $campaign): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><tr><td><div><?php echo e($campaign->name); ?></div><small class="text-muted"><?php echo e($campaign->audience_type); ?></small></td><td><?php echo e(strtoupper($campaign->channel)); ?></td><td><span class="badge bg-info"><?php echo e(__(ucfirst($campaign->status))); ?></span></td><td><?php echo e($campaign->responses_count); ?></td><td class="Action"><div class="action-btn me-2"><a href="<?php echo e(route('nps-campaigns.show', $campaign)); ?>" class="mx-3 btn btn-sm bg-warning"><i class="ti ti-eye text-white"></i></a></div><?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit nps campaign')): ?><div class="action-btn me-2"><a href="<?php echo e(route('nps-campaigns.edit', $campaign)); ?>" class="mx-3 btn btn-sm bg-info"><i class="ti ti-pencil text-white"></i></a></div><?php endif; ?> <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete nps campaign')): ?><div class="action-btn"><form method="POST" action="<?php echo e(route('nps-campaigns.destroy', $campaign)); ?>" id="delete-nps-campaign-<?php echo e($campaign->id); ?>"><?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?><a href="#" class="mx-3 btn btn-sm bg-danger bs-pass-para" data-confirm="<?php echo e(__('Are You Sure?').'|'.__('This action can not be undone. Do you want to continue?')); ?>" data-confirm-yes="document.getElementById('delete-nps-campaign-<?php echo e($campaign->id); ?>').submit();"><i class="ti ti-trash text-white"></i></a></form></div><?php endif; ?></td></tr><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></tbody></table></div></div></div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/html/resources/views/nps_campaigns/index.blade.php ENDPATH**/ ?>

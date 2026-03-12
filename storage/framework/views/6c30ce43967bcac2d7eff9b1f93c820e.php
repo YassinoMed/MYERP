@@ -1,0 +1,79 @@
+    <?php echo e(Form::model($document,array('route' => array('document.update', $document->id), 'method' => 'PUT', 'class'=>'needs-validation', 'novalidate'))); ?>
+
+    <div class="modal-body">
+    <div class="row">
+        <div class="col-12">
+            <div class="form-group">
+                <?php echo e(Form::label('name',__('Name',['class'=>'form-label']))); ?><?php if (isset($component)) { $__componentOriginalbba606fec37ea04333bc269e3e165587 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalbba606fec37ea04333bc269e3e165587 = $attributes; } ?>
+<?php $component = App\View\Components\Required::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('required'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\Required::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalbba606fec37ea04333bc269e3e165587)): ?>
+<?php $attributes = $__attributesOriginalbba606fec37ea04333bc269e3e165587; ?>
+<?php unset($__attributesOriginalbba606fec37ea04333bc269e3e165587); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalbba606fec37ea04333bc269e3e165587)): ?>
+<?php $component = $__componentOriginalbba606fec37ea04333bc269e3e165587; ?>
+<?php unset($__componentOriginalbba606fec37ea04333bc269e3e165587); ?>
+<?php endif; ?>
+                <?php echo e(Form::text('name',null,array('class'=>'form-control','placeholder'=>__('Enter Department Name'),'required'=> 'required'))); ?>
+
+                <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                <span class="invalid-name" role="alert">
+                    <strong class="text-danger"><?php echo e($message); ?></strong>
+                </span>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group">
+                <?php echo e(Form::label('is_required', __('Required Field'),['class'=>'form-label'])); ?><?php if (isset($component)) { $__componentOriginalbba606fec37ea04333bc269e3e165587 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalbba606fec37ea04333bc269e3e165587 = $attributes; } ?>
+<?php $component = App\View\Components\Required::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('required'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\Required::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalbba606fec37ea04333bc269e3e165587)): ?>
+<?php $attributes = $__attributesOriginalbba606fec37ea04333bc269e3e165587; ?>
+<?php unset($__attributesOriginalbba606fec37ea04333bc269e3e165587); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalbba606fec37ea04333bc269e3e165587)): ?>
+<?php $component = $__componentOriginalbba606fec37ea04333bc269e3e165587; ?>
+<?php unset($__componentOriginalbba606fec37ea04333bc269e3e165587); ?>
+<?php endif; ?>
+                <select class="form-control" required name="is_required">
+                    <option value="0" <?php if($document->is_required == 0): ?> selected <?php endif; ?>><?php echo e(__('Not Required')); ?></option>
+                    <option value="1" <?php if($document->is_required == 1): ?> selected <?php endif; ?>><?php echo e(__('Is Required')); ?></option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+    <div class="modal-footer">
+        <input type="button" value="<?php echo e(__('Cancel')); ?>" class="btn btn-secondary" data-bs-dismiss="modal">
+        <input type="submit" value="<?php echo e(__('Update')); ?>" class="btn btn-primary">
+    </div>
+    <?php echo e(Form::close()); ?>
+
+<?php /**PATH /Users/mohamedyassine/Downloads/Nouveau dossier contenant des éléments 5/erpgosaas-81nulled/codecanyon-33263426-erpgo-saas-all-in-one-business-erp-with-project-account-hrm-crm/main-file/resources/views/document/edit.blade.php ENDPATH**/ ?>

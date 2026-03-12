@@ -1,0 +1,22 @@
+<?php $__env->startSection('page-title', __('OKR Workspace')); ?>
+<?php $__env->startSection('breadcrumb'); ?>
+    <li class="breadcrumb-item"><a href="<?php echo e(route('dashboard')); ?>"><?php echo e(__('Dashboard')); ?></a></li>
+    <li class="breadcrumb-item"><?php echo e(__('OKR Workspace')); ?></li>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('page-subtitle'); ?>
+    <?php echo e(__('Track strategic objectives, progress and key results in one review-ready workspace.')); ?>
+
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('action-btn'); ?>
+    <div class="float-end"><?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create okr objective')): ?><a href="<?php echo e(route('okr-objectives.create')); ?>" class="btn btn-sm btn-primary"><i class="ti ti-plus"></i></a><?php endif; ?></div>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('content'); ?>
+    <div class="ux-kpi-grid mb-4">
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('Objectives')); ?></span><strong class="ux-kpi-value"><?php echo e($objectives->count()); ?></strong><span class="ux-kpi-meta"><?php echo e(__('active review scope')); ?></span></div>
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('Key Results')); ?></span><strong class="ux-kpi-value"><?php echo e($objectives->sum('key_results_count')); ?></strong><span class="ux-kpi-meta"><?php echo e(__('tracked outcomes')); ?></span></div>
+        <div class="ux-kpi-card"><span class="ux-kpi-label"><?php echo e(__('At risk')); ?></span><strong class="ux-kpi-value"><?php echo e($objectives->where('status', 'at_risk')->count()); ?></strong><span class="ux-kpi-meta"><?php echo e(__('requires leadership attention')); ?></span></div>
+    </div>
+    <div class="card ux-list-card"><div class="card-body table-border-style"><div class="table-responsive"><table class="table datatable"><thead><tr><th><?php echo e(__('Objective')); ?></th><th><?php echo e(__('Owner')); ?></th><th><?php echo e(__('Cycle')); ?></th><th><?php echo e(__('Progress')); ?></th><th><?php echo e(__('Key Results')); ?></th><th><?php echo e(__('Action')); ?></th></tr></thead><tbody><?php $__currentLoopData = $objectives; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $objective): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><tr><td><div><?php echo e($objective->title); ?></div><small class="text-muted"><?php echo e(optional($objective->project)->project_name ?: __('No linked project')); ?></small></td><td><?php echo e(optional($objective->owner)->name ?: '-'); ?></td><td><?php echo e($objective->cycle ?: '-'); ?></td><td><?php echo e(number_format((float) $objective->progress, 0)); ?>%</td><td><?php echo e($objective->key_results_count); ?></td><td class="Action"><div class="action-btn me-2"><a href="<?php echo e(route('okr-objectives.show', $objective)); ?>" class="mx-3 btn btn-sm bg-warning"><i class="ti ti-eye text-white"></i></a></div><?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('edit okr objective')): ?><div class="action-btn me-2"><a href="<?php echo e(route('okr-objectives.edit', $objective)); ?>" class="mx-3 btn btn-sm bg-info"><i class="ti ti-pencil text-white"></i></a></div><?php endif; ?> <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete okr objective')): ?><div class="action-btn"><form method="POST" action="<?php echo e(route('okr-objectives.destroy', $objective)); ?>" id="delete-okr-objective-<?php echo e($objective->id); ?>"><?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?><a href="#" class="mx-3 btn btn-sm bg-danger bs-pass-para" data-confirm="<?php echo e(__('Are You Sure?').'|'.__('This action can not be undone. Do you want to continue?')); ?>" data-confirm-yes="document.getElementById('delete-okr-objective-<?php echo e($objective->id); ?>').submit();"><i class="ti ti-trash text-white"></i></a></form></div><?php endif; ?></td></tr><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></tbody></table></div></div></div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /Users/mohamedyassine/Downloads/Nouveau dossier contenant des éléments 5/erpgosaas-81nulled/codecanyon-33263426-erpgo-saas-all-in-one-business-erp-with-project-account-hrm-crm/main-file/resources/views/okr_objectives/index.blade.php ENDPATH**/ ?>
