@@ -38,19 +38,6 @@
             break;
         }
     }
-    $moduleLabels = [
-        'default' => __('Workspace'),
-        'account' => __('Finance'),
-        'crm' => __('CRM'),
-        'hrm' => __('HR'),
-        'project' => __('Projects'),
-        'pos' => __('POS'),
-    ];
-    $currentModuleLabel = $moduleLabels[$moduleKey] ?? $moduleLabels['default'];
-    $pageSubtitle = trim($__env->yieldContent('page-subtitle'));
-    if ($pageSubtitle === '') {
-        $pageSubtitle = __('Faster navigation, clearer actions and a cleaner workspace across modules.');
-    }
 
     $lightStyle = $SITE_RTL == 'on' ? asset('assets/css/style-rtl.css') : asset('assets/css/style.css');
     $darkStyle = asset('assets/css/style-dark.css');
@@ -79,7 +66,6 @@
 <meta name="audit-log-export-csv-url" content="<?php echo e(route('audit.log.export.csv')); ?>">
 <meta name="dark-layout-setting" content="<?php echo e($setting['cust_darklayout'] ?? 'off'); ?>">
 <meta name="dark-layout-auto" content="<?php echo e($setting['cust_darklayout_auto'] ?? 'off'); ?>">
-<meta name="global-search-placeholder" content="<?php echo e(__('Search modules, records, commands or pages...')); ?>">
 
 <head>
     <title><?php echo e($setting['title_text'] ? $setting['title_text'] : config('app.name', 'ERPGo SaaS')); ?> - <?php echo $__env->yieldContent('page-title'); ?>
@@ -163,7 +149,7 @@
 
 
 
-<body class="<?php echo e($themeColor); ?>" data-module="<?php echo e($moduleKey); ?>" data-layout="admin-premium">
+<body class="<?php echo e($themeColor); ?>" data-module="<?php echo e($moduleKey); ?>">
 
     <!-- [ Pre-loader ] start -->
     <div class="loader-bg">
@@ -241,31 +227,24 @@
     <!-- [ Main Content ] start -->
     <div class="dash-container">
         <div class="dash-content">
-            <div class="page-header ux-page-header">
+            <div class="page-header">
                 <div class="page-block">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <div class="ux-page-context">
-                            <div class="ux-page-kicker">
-                                <span class="ux-module-pill"><?php echo e($currentModuleLabel); ?></span>
-                                <span class="ux-page-helper"><?php echo e(__('ERP workspace')); ?></span>
-                            </div>
+                        <div>
                             <div class="page-header-title">
                                 <h4 class="mb-2"><?php echo $__env->yieldContent('page-title'); ?></h4>
                             </div>
-                            <p class="ux-page-subtitle mb-0"><?php echo e($pageSubtitle); ?></p>
                             <ul class="breadcrumb">
                                 <?php echo $__env->yieldContent('breadcrumb'); ?>
                             </ul>
                         </div>
-                        <div class="action-btn-col ux-page-actions">
+                        <div class="action-btn-col">
                             <?php echo $__env->yieldContent('action-btn'); ?>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="ux-page-content">
-                <?php echo $__env->yieldContent('content'); ?>
-            </div>
+            <?php echo $__env->yieldContent('content'); ?>
             <!-- [ Main Content ] end -->
         </div>
     </div>

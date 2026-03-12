@@ -1,0 +1,372 @@
+# =====================================================================
+# ERPGo SaaS — Docker Compose
+# =====================================================================
+# Architecture : BD MySQL unique centralisée (erp_database)
+# Tous les services Laravel pointent vers la même DB
+# =====================================================================
+# Usage:
+#   docker compose up -d              → Lancer tout
+#   docker compose up -d core         → Lancer seulement core + deps
+#   docker compose logs -f core       → Voir les logs
+#   docker compose down               → Arrêter tout
+#   docker compose down -v            → Arrêter + supprimer volumes
+# =====================================================================
+
+networks:
+  erp_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  mysql_data: {}
+  redis_data: {}
+  kafka_data: {}
+  zookeeper_data: {}
+
+# =====================================================================
+# YAML ANCHORS (DRY — Don't Repeat Yourself)
+# =====================================================================
+
+x-db-env: &db-env
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_DATABASE: ${DB_DATABASE:-erpgo}
+  DB_USERNAME: ${DB_USERNAME:-erpgo_user}
+  DB_PASSWORD: ${DB_PASSWORD:-erpgo_secret_2026}
+
+x-laravel-service: &laravel-service
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: local-erp-php:8.4
+  restart: unless-stopped
+  working_dir: /var/www/html
+  volumes:
+    - ./:/var/www/html
+  networks:
+    - erp_network
+  environment: &laravel-env-base
+    APP_ENV: ${APP_ENV:-production}
+    APP_DEBUG: ${APP_DEBUG:-false}
+    APP_KEY: ${APP_KEY:-}
+    APP_URL: ${APP_URL:-http://localhost:8080}
+    # ── Database (BD unique centralisée) ──
+    <<: *db-env
+    # ── Redis ──
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    # ── Kafka ──
+    KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    # ── Cache & Session ──
+    CACHE_DRIVER: redis
+    SESSION_DRIVER: redis
+    QUEUE_CONNECTION: redis
+  healthcheck:
+    test: ["CMD-SHELL", "php -r \"try{new PDO('mysql:host=mysql;dbname=${DB_DATABASE:-erpgo}','${DB_USERNAME:-erpgo_user}','${DB_PASSWORD:-erpgo_secret_2026}');echo 'ok';}catch(Exception \\$$e){exit(1);}\""]
+    interval: 20s
+    timeout: 10s
+    retries: 5
+    start_period: 45s
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 128M
+
+# =====================================================================
+#                         S E R V I C E S
+# =====================================================================
+services:
+
+  # ==================================================================
+  # 1. DATABASE — BD MySQL unique centralisée
+  # ==================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: erp-mysql
+    restart: unless-stopped
+    networks:
+      - erp_network
+    ports:
+      - "${MYSQL_EXTERNAL_PORT:-33070}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_2026}
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: ${DB_DATABASE:-erpgo}
+      MYSQL_USER: ${DB_USERNAME:-erpgo_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-erpgo_secret_2026}
+    command:
+      # ── Performance tuning ──
+      - --innodb-buffer-pool-size=512M
+      - --max-connections=300
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-log-file-size=128M
+      - --innodb-file-per-table=1
+      - --slow-query-log=1
+      - --slow-query-log-file=/var/log/mysql/slow.log
+      - --long-query-time=2
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u${DB_USERNAME:-erpgo_user}", "-p${DB_PASSWORD:-erpgo_secret_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # ==================================================================
+  # 2. API GATEWAY — SINGLE ENTRY POINT
+  # ==================================================================
+  gateway:
+    image: nginx:1.25-alpine
+    container_name: erp-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./docker/gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    depends_on:
+      core:
+        condition: service_started
+
+  # ==================================================================
+  # 3. INFRASTRUCTURE — Cache & Event Streaming
+  # ==================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: erp-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 64M
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: erp-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: erp-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: 60000
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 60000
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - erp_network
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  # ==================================================================
+  # 4. CORE SERVICE — Noyau central ERP
+  #    Gère: Auth, Users, CRM, HRM, Projects, Accounting, Sales,
+  #          POS, Inventory, WMS, Production, LandingPage
+  # ==================================================================
+  core:
+    <<: *laravel-service
+    container_name: erp-core
+    command: sh -lc "mkdir -p /var/log/supervisor /run/nginx && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"
+    # Le conteneur core sert l'application via nginx interne sur 8080.
+    ports:
+      - "${CORE_PORT:-8000}:8080"
+    environment:
+      <<: *laravel-env-base
+      APP_NAME: "ERPGo Core"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  # ==================================================================
+  # 5. HEDGING SERVICE — Couverture Agricole
+  # ==================================================================
+  hedging-service:
+    <<: *laravel-service
+    container_name: erp-hedging
+    command: sh -lc "mkdir -p /var/log/supervisor /run/nginx && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"
+    ports:
+      - "${HEDGING_PORT:-8030}:8080"
+    environment:
+      <<: *laravel-env-base
+      APP_NAME: "ERPGo Hedging"
+    depends_on:
+      core:
+        condition: service_started
+
+  # ==================================================================
+  # 6. QUEUE WORKER — Traitement des jobs en background
+  # ==================================================================
+  queue-worker:
+    <<: *laravel-service
+    container_name: erp-queue-worker
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    environment:
+      <<: *laravel-env-base
+      APP_NAME: "ERPGo Queue Worker"
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan queue:monitor redis --max=100 2>/dev/null || exit 0"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ==================================================================
+  # 7. CRON SCHEDULER — Tâches planifiées Laravel
+  # ==================================================================
+  scheduler:
+    <<: *laravel-service
+    container_name: erp-scheduler
+    command: >
+      sh -c "while true; do
+        php artisan schedule:run --verbose --no-interaction;
+        sleep 60;
+      done"
+    environment:
+      <<: *laravel-env-base
+      APP_NAME: "ERPGo Scheduler"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'echo 1;' || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

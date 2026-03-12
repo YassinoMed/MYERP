@@ -14,21 +14,15 @@
     $setting = \App\Models\Utility::settings();
 
     $unseenCounter=App\Models\ChMessage::where('to_id', Auth::user()->id)->where('seen', 0)->count();
-    $savedViews = \App\Models\SavedView::query()
-        ->where('user_id', Auth::id())
-        ->latest('is_default')
-        ->latest('id')
-        ->limit(6)
-        ->get();
 ?>
 <?php if(isset($setting['cust_theme_bg']) && $setting['cust_theme_bg'] == 'on'): ?>
-    <header class="dash-header transprent-bg erp-header-shell">
+    <header class="dash-header transprent-bg">
 <?php else: ?>
-    <header class="dash-header erp-header-shell">
+    <header class="dash-header">
 <?php endif; ?>
-    <div class="header-wrapper erp-header-wrapper">
+    <div class="header-wrapper">
         <div class="me-auto dash-mob-drp">
-            <ul class="list-unstyled erp-header-cluster erp-header-cluster-start">
+            <ul class="list-unstyled">
                 <li class="dash-h-item mob-hamburger">
                     <a href="#!" class="dash-head-link" id="mobile-collapse">
                         <div class="hamburger hamburger--arrowturn">
@@ -36,11 +30,6 @@
                                 <div class="hamburger-inner"></div>
                             </div>
                         </div>
-                    </a>
-                </li>
-                <li class="dash-h-item d-none d-lg-inline-flex">
-                    <a href="#!" class="dash-head-link" data-sidebar-pin-toggle="1" aria-label="<?php echo e(__('Toggle compact sidebar')); ?>">
-                        <i class="ti ti-layout-sidebar-left-collapse"></i>
                     </a>
                 </li>
 
@@ -73,7 +62,7 @@
             </ul>
         </div>
         <div class="ms-auto">
-            <ul class="list-unstyled erp-header-cluster erp-header-cluster-end">
+            <ul class="list-unstyled">
                 <?php if(\Auth::user()->type == 'company' ): ?>
                 <?php if (is_impersonating($guard = null)) : ?>
                 <li class="dropdown dash-h-item drp-company">
@@ -124,76 +113,9 @@
                     </li>
                 <?php endif; ?>
 
-                <li class="dropdown dash-h-item drp-workspace">
-                    <a class="dash-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
-                        <i class="ti ti-layout-grid"></i>
-                        <span class="drp-text hide-mob"><?php echo e(__('Workspace')); ?></span>
-                        <i class="ti ti-chevron-down drp-arrow nocolor"></i>
-                    </a>
-                    <div class="dropdown-menu dash-h-dropdown dropdown-menu-end">
-                        <span class="dropdown-item-text workspace-menu-label"><?php echo e(__('Navigate')); ?></span>
-                        <a href="<?php echo e(route('executive.dashboard')); ?>" class="dropdown-item">
-                            <i class="ti ti-layout-dashboard text-dark"></i><span><?php echo e(__('Executive Overview')); ?></span>
-                        </a>
-                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('manage invoice')): ?>
-                            <a href="<?php echo e(route('invoice.index')); ?>" class="dropdown-item">
-                                <i class="ti ti-file-invoice text-dark"></i><span><?php echo e(__('Finance Desk')); ?></span>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('manage lead')): ?>
-                            <a href="<?php echo e(route('leads.index')); ?>" class="dropdown-item">
-                                <i class="ti ti-users text-dark"></i><span><?php echo e(__('CRM Pipeline')); ?></span>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('manage employee')): ?>
-                            <a href="<?php echo e(route('employee.index')); ?>" class="dropdown-item">
-                                <i class="ti ti-user-heart text-dark"></i><span><?php echo e(__('People Hub')); ?></span>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('manage projects')): ?>
-                            <a href="<?php echo e(route('projects.index')); ?>" class="dropdown-item">
-                                <i class="ti ti-briefcase text-dark"></i><span><?php echo e(__('Projects')); ?></span>
-                            </a>
-                        <?php endif; ?>
-                        <div class="dropdown-divider"></div>
-                        <span class="dropdown-item-text workspace-menu-label"><?php echo e(__('Shortcuts')); ?></span>
-                        <a href="<?php echo e(route('core.saved-views.index')); ?>" class="dropdown-item">
-                            <i class="ti ti-bookmarks text-dark"></i><span><?php echo e(__('Saved Views')); ?></span>
-                        </a>
-                        <a href="javascript:void(0)" class="dropdown-item" onclick="if(window.toggleNotifPanel){window.toggleNotifPanel();}">
-                            <i class="ti ti-bell-ringing text-dark"></i><span><?php echo e(__('Notifications')); ?></span>
-                        </a>
-                        <a href="<?php echo e(route('core.onboarding')); ?>" class="dropdown-item">
-                            <i class="ti ti-building-store text-dark"></i><span><?php echo e(__('Tenant Cockpit')); ?></span>
-                        </a>
-                        <a href="<?php echo e(route('core.security.index')); ?>" class="dropdown-item">
-                            <i class="ti ti-shield-lock text-dark"></i><span><?php echo e(__('Security Center')); ?></span>
-                        </a>
-                        <a href="<?php echo e(route('core.help-center')); ?>" class="dropdown-item">
-                            <i class="ti ti-lifebuoy text-dark"></i><span><?php echo e(__('Help Center')); ?></span>
-                        </a>
-                        <?php if($savedViews->isNotEmpty()): ?>
-                            <div class="dropdown-divider"></div>
-                            <span class="dropdown-item-text workspace-menu-label"><?php echo e(__('Recent Views')); ?></span>
-                            <?php $__currentLoopData = $savedViews; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $savedView): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <a href="<?php echo e(route('core.saved-views.index')); ?>" class="dropdown-item">
-                                    <i class="ti ti-arrow-forward-up text-dark"></i>
-                                    <span><?php echo e($savedView->name); ?></span>
-                                </a>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        <?php endif; ?>
-                    </div>
-                </li>
-
                 <li class="dropdown dash-h-item">
-                    <a class="dash-head-link arrow-none me-0 dash-command-launcher" href="javascript:void(0)" onclick="openSearch()" data-global-search-trigger="1" aria-haspopup="false" aria-expanded="false">
-                        <span class="command-icon">
-                            <i class="ti ti-search"></i>
-                        </span>
-                        <span class="command-copy d-none d-xl-flex">
-                            <span class="command-title"><?php echo e(__('Search, commands, clients...')); ?></span>
-                            <span class="command-shortcut">Ctrl K</span>
-                        </span>
+                    <a class="dash-head-link arrow-none me-0" href="javascript:void(0)" onclick="openSearch()" data-global-search-trigger="1" aria-haspopup="false" aria-expanded="false">
+                        <i class="ti ti-search"></i>
                     </a>
                 </li>
 
@@ -219,7 +141,7 @@
                         aria-expanded="false"
                     >
                         <i class="ti ti-world nocolor"></i>
-                        <span class="drp-text hide-mob"><?php echo e(ucfirst(optional($LangName)->full_name ?? ($languages[$lang] ?? $lang ?? 'en'))); ?></span>
+                        <span class="drp-text hide-mob"><?php echo e(ucfirst($LangName->full_name)); ?></span>
                         <i class="ti ti-chevron-down drp-arrow nocolor"></i>
                     </a>
                     <div class="dropdown-menu dash-h-dropdown dropdown-menu-end">
